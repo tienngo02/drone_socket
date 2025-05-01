@@ -2,18 +2,16 @@
   "name": "drone_socket",
   "version": "1.0.0",
   "private": true,
-  "main": "dist/server.js",
+  "type": "commonjs",
   "scripts": {
-    "dev": "ts-node server.ts",
     "build": "tsc",
-    "start": "node dist/server.js"
+    "start": "npm run build && node dist/socket_server.js"
   },
   "dependencies": {
     "ws": "^8.18.1"
   },
   "devDependencies": {
-    "@types/ws": "^8.5.10",
-    "typescript": "^5.8.2",
-    "ts-node": "^10.9.2"
+    "typescript": "^5.3.3",
+    "@types/ws": "^8.5.5"
   }
 }
