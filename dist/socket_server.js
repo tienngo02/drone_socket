@@ -21,7 +21,7 @@ wss.on("connection", (ws) => {
         try {
             const msg = JSON.parse(data.toString());
             // Đăng ký client
-            if (!clientId && msg.command === "registry" && msg.name) {
+            if (msg.command === "registry" && msg.name) {
                 clientId = msg.name;
                 const list = clients.get(msg.name) || [];
                 list.push(ws);
@@ -29,10 +29,10 @@ wss.on("connection", (ws) => {
                 console.log(`✅ Registered client: ${clientId}`);
                 return;
             }
-            if (!clientId) {
-                console.warn("⚠️ Message từ client chưa đăng ký bị từ chối");
-                return;
-            }
+            // if (!clientId) {
+            //   console.warn("⚠️ Message từ client chưa đăng ký bị từ chối");
+            //   return;
+            // }
             // Gửi message tới tất cả clients có name = msg.to
             if (msg.to) {
                 const targetClients = clients.get(msg.to);
