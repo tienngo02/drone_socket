@@ -10,9 +10,9 @@ const server = http_1.default.createServer((req, res) => {
     res.writeHead(200);
     res.end("WebSocket Server is running\n");
 });
-// Lấy port từ Render hoặc mặc định là 4000
 const PORT = process.env.PORT ? parseInt(process.env.PORT) : 4000;
 const wss = new ws_1.WebSocketServer({ server });
+// Map<string, WebSocket[]> để hỗ trợ nhiều client có cùng name
 const clients = new Map();
 wss.on("connection", (ws) => {
     console.log("✅ WebSocket connected");
@@ -20,27 +20,32 @@ wss.on("connection", (ws) => {
     ws.on("message", (data) => {
         try {
             const msg = JSON.parse(data.toString());
-            // Bước 1: Đăng ký client
+            // Đăng ký client
             if (!clientId && msg.command === "registry" && msg.name) {
                 clientId = msg.name;
-                clients.set(msg.name, ws); // dùng msg.name vì đã đảm bảo là string
+                const list = clients.get(msg.name) || [];
+                list.push(ws);
+                clients.set(msg.name, list);
                 console.log(`✅ Registered client: ${clientId}`);
                 return;
             }
-            // Nếu chưa đăng ký thì không xử lý tiếp
             if (!clientId) {
                 console.warn("⚠️ Message từ client chưa đăng ký bị từ chối");
                 return;
             }
-            // Bước 2: Gửi message tới client cụ thể (theo msg.to)
+            // Gửi message tới tất cả clients có name = msg.to
             if (msg.to) {
-                const targetClient = clients.get(msg.to);
-                if (targetClient && targetClient.readyState === ws_1.WebSocket.OPEN) {
-                    targetClient.send(JSON.stringify(msg));
-                    console.log(`📨 Message from ${clientId} sent to ${msg.to}`);
+                const targetClients = clients.get(msg.to);
+                if (targetClients && targetClients.length > 0) {
+                    targetClients.forEach(client => {
+                        if (client.readyState === ws_1.WebSocket.OPEN) {
+                            client.send(JSON.stringify(msg));
+                        }
+                    });
+                    console.log(`📨 Message from ${clientId} sent to all '${msg.to}' clients`);
                 }
                 else {
-                    console.warn(`⚠️ Client '${msg.to}' not connected`);
+                    console.warn(`⚠️ No connected clients for '${msg.to}'`);
                 }
             }
             else {
@@ -53,8 +58,17 @@ wss.on("connection", (ws) => {
     });
     ws.on("close", () => {
         if (clientId) {
-            clients.delete(clientId);
-            console.log(`❌ Client ${clientId} disconnected`);
+            const list = clients.get(clientId);
+            if (list) {
+                const filtered = list.filter(client => client !== ws);
+                if (filtered.length > 0) {
+                    clients.set(clientId, filtered);
+                }
+                else {
+                    clients.delete(clientId);
+                }
+                console.log(`❌ Client ${clientId} disconnected`);
+            }
         }
     });
 });
