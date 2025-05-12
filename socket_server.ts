@@ -17,25 +17,27 @@ wss.on("connection", (ws: WebSocket) => {
   console.log("✅ WebSocket connected");
 
   let clientId: string | null = null;
+  let registered = false;
 
   ws.on("message", (data: RawData) => {
     try {
       const msg = JSON.parse(data.toString());
 
-      // Đăng ký client
-      if (msg.command === "registry" && msg.name) {
+      // Đăng ký client - chỉ cho phép 1 lần
+      if (!registered && msg.command === "registry" && msg.name) {
         clientId = msg.name;
         const list = clients.get(msg.name) || [];
         list.push(ws);
         clients.set(msg.name, list);
+        registered = true;
         console.log(`✅ Registered client: ${clientId}`);
         return;
       }
 
-      // if (!clientId) {
-      //   console.warn("⚠️ Message từ client chưa đăng ký bị từ chối");
-      //   return;
-      // }
+      if (!registered) {
+        console.warn("⚠️ Message từ client chưa đăng ký bị từ chối");
+        return;
+      }
 
       // Gửi message tới tất cả clients có name = msg.to
       if (msg.to) {
