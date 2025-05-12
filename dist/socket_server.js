@@ -21,7 +21,7 @@ wss.on("connection", (ws) => {
         try {
             const msg = JSON.parse(data.toString());
             // Bước 1: Đăng ký client
-            if (!clientId && msg.command === "register" && msg.name) {
+            if (!clientId && msg.command === "registry" && msg.name) {
                 clientId = msg.name;
                 clients.set(msg.name, ws); // dùng msg.name vì đã đảm bảo là string
                 console.log(`✅ Registered client: ${clientId}`);
