@@ -10,7 +10,7 @@ const server = http_1.default.createServer((req, res) => {
     res.writeHead(200);
     res.end("WebSocket Server is running\n");
 });
-const PORT = process.env.PORT ? parseInt(process.env.PORT) : 4000;
+const PORT = process.env.PORT;
 const wss = new ws_1.WebSocketServer({ server });
 // Map<string, WebSocket[]> để hỗ trợ nhiều client có cùng name
 const clients = new Map();
@@ -22,7 +22,7 @@ wss.on("connection", (ws) => {
         try {
             const msg = JSON.parse(data.toString());
             // Đăng ký client - chỉ cho phép 1 lần
-            if (!registered && msg.command === "registry" && msg.name) {
+            if (msg.command === "registry" && msg.name) {
                 clientId = msg.name;
                 const list = clients.get(msg.name) || [];
                 list.push(ws);
@@ -31,10 +31,10 @@ wss.on("connection", (ws) => {
                 console.log(`✅ Registered client: ${clientId}`);
                 return;
             }
-            if (!registered) {
-                console.warn("⚠️ Message từ client chưa đăng ký bị từ chối");
-                return;
-            }
+            // if (!registered) {
+            //   console.warn("⚠️ Message từ client chưa đăng ký bị từ chối");
+            //   return;
+            // }
             // Gửi message tới tất cả clients có name = msg.to
             if (msg.to) {
                 const targetClients = clients.get(msg.to);
